@@ -1,0 +1,36 @@
+# Based on https://docs.docker.com/engine/installation/linux/ubuntulinux/
+# TODO: Get linux-image-extra version from $(uname -r)
+---
+  - hosts: all
+    become: true
+    tasks:
+      - name: adding docker apt key
+        apt_key: keyserver=hkp://p80.pool.sks-keyservers.net:80 id=58118E89F3A912897C070ADBF76221572C52609D
+
+      - name: adding docker apt repository
+        apt_repository: repo='deb https://apt.dockerproject.org/repo ubuntu-trusty main' state=present
+
+      - name: update apt cache
+        apt: update_cache=yes cache_valid_time=86400
+
+      - name: ensure prerequisites
+        apt: name={{item}} state=present
+        with_items:
+        - apt-transport-https
+        - ca-certificates
+        - linux-image-extra-3.13.0-62-generic
+        - apparmor
+
+      - name: install docker
+        apt: name=docker-engine state=present
+
+      - name: ensure docker is started & starts on boot
+        service: name=docker state=started enabled=yes
+
+      - name: store installed docker version
+        command: docker -v
+        register: holder
+
+      - name: display installed docker version
+        debug: var=holder.stdout
+        
